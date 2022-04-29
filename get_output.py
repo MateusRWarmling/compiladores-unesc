@@ -22,12 +22,21 @@ def define_type(token):
     return(f"{reserved_word[1]} --- {reserved_word[0]}")
 
 def generate_output(filePath):
+    isComment = False
     tokens = []
     tokens_types = []
     file = open(filePath)
 
     for line in file:
         for word in line.split():
+            if word == "(*":
+                isComment = True
+                continue
+            if word == "*)":
+                isComment = False
+                continue
+            if isComment == True:
+                continue
             tokens.append(word)
 
     for token in tokens:

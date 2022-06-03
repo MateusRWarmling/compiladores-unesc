@@ -3,7 +3,8 @@ from faulthandler import disable
 from tkinter import *
 from tkinter.ttk import Treeview
 from tkinter.filedialog import asksaveasfilename, askopenfilename
-from get_output import generate_output
+from lexicalStep import lexicalStep
+from syntacticStep import syntacticStep
 
 i = 1
 idTabela = 0
@@ -11,37 +12,37 @@ scrollState = tuple()
 application = Tk()
 
 application.title('Compilador')
-file_path = ''
+filePath = ''
 
-code_output_frame = Frame(application)
-code_output_frame.pack(side=RIGHT)
-code_output = Treeview(code_output_frame, height=25)
-code_output['columns'] = ('value', 'key_name', 'key_id', 'line_id')
-code_output.column("#0", width=0,  stretch=NO)
-code_output.column("value",anchor=CENTER, width=130)
-code_output.column("key_name",anchor=CENTER,width=130)
-code_output.column("key_id",anchor=CENTER,width=130)
-code_output.column("line_id",anchor=CENTER,width=130)
+superWrapper = Frame(application)
 
-code_output.heading("#0",text="",anchor=CENTER)
-code_output.heading("value",text="Valor digitado",anchor=CENTER)
-code_output.heading("key_name",text="Token",anchor=CENTER)
-code_output.heading("key_id",text="Código do token",anchor=CENTER)
-code_output.heading("line_id",text="Linha",anchor=CENTER)
+codeOutputFrame = Frame(superWrapper)
+codeOutputFrame.pack(side=RIGHT)
+codeOutput = Treeview(codeOutputFrame, height=40)
+codeOutput['columns'] = ('value', 'key_name', 'key_id', 'line_id')
+codeOutput.column("#0", width=0,  stretch=NO)
+codeOutput.column("value",anchor=CENTER, width=130)
+codeOutput.column("key_name",anchor=CENTER,width=130)
+codeOutput.column("key_id",anchor=CENTER,width=130)
+codeOutput.column("line_id",anchor=CENTER,width=130)
 
-wrapper = Frame(application)
+codeOutput.heading("#0",text="",anchor=CENTER)
+codeOutput.heading("value",text="Valor digitado",anchor=CENTER)
+codeOutput.heading("key_name",text="Token",anchor=CENTER)
+codeOutput.heading("key_id",text="Código do token",anchor=CENTER)
+codeOutput.heading("line_id",text="Linha",anchor=CENTER)
+
+wrapper = Frame(superWrapper)
 
 text_scroll = Scrollbar(wrapper)
 text_scroll.pack(side=RIGHT, fill=Y)
 
-editor = Text(wrapper, height=25, yscrollcommand=text_scroll.set) 
-lineNumbers = Text(wrapper, height=25, width=3, yscrollcommand=text_scroll.set)
+editor = Text(wrapper, height=40, yscrollcommand=text_scroll.set)
+console = Text(superWrapper, height=5, bg = 'black', fg="green") 
+lineNumbers = Text(wrapper, height=40, width=3, yscrollcommand=text_scroll.set)
 lineNumbers.pack(side=LEFT)
 
-def multiple_yview(*args):
-    print('ARG PADRAO:')
-    print(*args)
-
+def multipleYview(*args):
     global scrollState
     scrollState = args
     editor.yview(*args)
@@ -55,65 +56,74 @@ def createLineNumber(*args):
         lineNumbers.insert("end", line + 1)
         if(line != totalLines - 1):
             lineNumbers.insert("end", "\n")
-    print('MUDANDO PARA TUPLE:')
 
 def disable(*args):
     return 'break'
 
-text_scroll.config(command=multiple_yview)
+text_scroll.config(command=multipleYview)
 
 editor.bind('<MouseWheel>', disable)
 editor.bind('<Any-KeyPress>', createLineNumber)
 lineNumbers.bind('<MouseWheel>', disable)
 
+superWrapper.pack()
 editor.pack(side=LEFT)
 wrapper.pack()
 
-def set_path(path):
-    global file_path 
-    file_path = path
+def setPath(path):
+    global filePath 
+    filePath = path
 
 def start ():
     createLineNumber()
 
     idOutput = 0
     y = 0
-    if code_output.get_children():
-        x = code_output.get_children()
+    if codeOutput.get_children():
+        x = codeOutput.get_children()
         for item in x:
-            code_output.delete(item)
-    if file_path == '':
+            codeOutput.delete(item)
+    if filePath == '':
         warning = Toplevel()
         text = Label(warning, text="Você deve salvar antes de começar")
         text.pack()
         return
     
-    output = generate_output(file_path)
+    output = lexicalStep(filePath)
     
-    for output_type in output:
-        splitedValues = output_type.split("%%%%")
-        code_output.insert(parent='', index='end', iid=idOutput, text='',
+    for outputType in output:
+        splitedValues = outputType.split("%%%%")
+        codeOutput.insert(parent='', index='end', iid=idOutput, text='',
         values=(splitedValues[0], splitedValues[1], splitedValues[2], splitedValues[3]))
         y = y + 1
         idOutput = idOutput + 1
-    code_output.pack()
+    codeOutput.pack()
+
+    console.delete('1.0', END)
+    try:
+        syntacticStep(output)
+        console.insert('1.0', 'Sucesso!')
+    except Exception as valueError:
+        console.insert('1.0', valueError)
+    console.pack(fill=X)
+
 
 def save():
-    if file_path == '':
+    if filePath == '':
         path = asksaveasfilename(filetypes=[('Text Document', '*.txt')])
-        set_path(path)
+        setPath(path)
     else: 
-        path = file_path
+        path = filePath
 
     updated_file = open(path, 'w')
     updated_file.write(editor.get('1.0', END))
 
-def open_file():
+def openFile():
     path = askopenfilename(filetypes=[('Text Document', '*.txt')])
-    opened_file = open(path, 'r')
+    openedFile = open(path, 'r')
     editor.delete('1.0', END)
-    editor.insert('1.0', opened_file.read())
+    editor.insert('1.0', openedFile.read())
     createLineNumber()
 
-    set_path(path)
+    setPath(path)
 

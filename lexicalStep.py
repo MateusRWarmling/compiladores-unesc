@@ -1,5 +1,7 @@
-from unique_tokens import unique_tokens
+from uniqueTokens import uniqueTokens
 import re
+
+# analise lexica
 
 def getSanatizedArray(word):
     sanatizedWord = word
@@ -30,7 +32,7 @@ def getSanatizedArray(word):
 
     return sanatizedWord.split()
 
-def is_integer(token):
+def isInteger(token):
     try:
         if token == '0':
             return '0'
@@ -38,22 +40,30 @@ def is_integer(token):
     except:
         return False
 
-def is_reserved(token):
-    for key, value in unique_tokens.items():
+def isReserved(token):
+    for key, value in uniqueTokens.items():
         if value.upper() == token.upper():
             return token,value, key
 
-    return token, unique_tokens.get(25), '25'
+    return token, uniqueTokens.get(25), '25'
 
-def define_type(token, line):
-    integer_token = is_integer(token)
+def defineType(token, line):
+    integer_token = isInteger(token)
     if integer_token:
-        return(f"{integer_token}%%%%{unique_tokens.get(26)}%%%%26%%%%{line}")
+        return(f"{integer_token}%%%%{uniqueTokens.get(26)}%%%%26%%%%{line}")
 
-    reserved_word = is_reserved(token)
+    reserved_word = isReserved(token)
     return(f"{reserved_word[0]}%%%%{reserved_word[1]}%%%%{reserved_word[2]}%%%%{line}")
 
-def generate_output(filePath):
+def defineTerminalType(token):
+    integer_token = isInteger(token)
+    if integer_token:
+        return 26
+
+    reserved_word = isReserved(token)
+    return reserved_word[2]
+
+def lexicalStep(filePath):
     isComment = False
     tokens = []
     tokens_types = []
@@ -81,7 +91,7 @@ def generate_output(filePath):
             tokens.append([(index + 1), word])
 
     for token in tokens:
-       tokens_types.append(define_type(token[1], token[0]))
+       tokens_types.append(defineType(token[1], token[0]))
 
     file.close()
     return tokens_types
